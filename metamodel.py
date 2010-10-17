@@ -44,7 +44,7 @@ class AbstractElement(object):
         """Creates an instance of the element."""
         
         # Create a dictionary for storing the values of the fields.
-        self.__dict__["values"] = dict()
+        self._values = dict()
         
         # Assign the values specified in the constructor.
         for (k,v) in kwargs.items():
@@ -52,8 +52,8 @@ class AbstractElement(object):
             
         # Verify that all PARENT type attributes are set.
         err = None
-        for (k,v) in self.fields.items():
-            if v.type == FieldDescriptor.PARENT and k not in self.values:
+        for (k,v) in self._fields.items():
+            if v.type == FieldDescriptor.PARENT and k not in self._values:
                 if err == None:
                     err = []
                 err.append(k)
@@ -69,17 +69,17 @@ class AbstractElement(object):
         This set can (but usually should not) be modified."""
         
         # is the value set?, return it.
-        if name in self.values:
-            return self.values[name]
+        if name in self._values:
+            return self._values[name]
             
         # if not, check whether it actually is a valid field name.
-        if name not in self.fields:
+        if name not in self._fields:
             raise AttributeError("Unknown Attribute '{0}'".format(name))
         
         # If it is a child-list, we need to initialize it first, 
         # as the return value might be modified.
-        if self.fields[name].type == FieldDescriptor.CHILDLIST:
-            self.values[name] = r = set()
+        if self._fields[name].type == FieldDescriptor.CHILDLIST:
+            self._values[name] = r = set()
             return r
         
         # Return the default value.
@@ -90,18 +90,23 @@ class AbstractElement(object):
         Except when the field is a child-list, because
         it can not be set."""
         
+        # If name start with an underscore, it is an internal attribute
+        if name[0]=="_":
+            self.__dict__[name]=value
+            return
+        
         # Verify that name denotes a valid field name
-        if name not in self.fields:
+        if name not in self._fields:
             raise AttributeError("Unknown Attribute '{0}'".format(name))
         
         # Verify that the field is not a childlist
-        if self.fields[name].type == FieldDescriptor.CHILDLIST:
+        if self._fields[name].type == FieldDescriptor.CHILDLIST:
             raise AttributeError("Setting value of childlist {0}".format(name))
         
         
         # If a parent field is set, also update the parent's childlist and
         # do type checking.
-        field = self.fields[name]
+        field = self._fields[name]
         if field.type == FieldDescriptor.PARENT:
             # Check that value is of the right type and raise a meaning full error otherwise.
             if not isinstance(value, field.elementtype):
@@ -112,13 +117,13 @@ class AbstractElement(object):
             childlist = getattr(value, field.listname)
                 
             # Check of the field was already set
-            if name in self.values:
+            if name in self._values:
                 # Ignore the assignment if it does not change the value
-                if id(self.values[name]) == id(value):
+                if id(self._values[name]) == id(value):
                     return
 
                 # Remove the old value
-                oldvalue = self.values[name]
+                oldvalue = self._values[name]
                 if oldvalue in childlist:
                     childlist.remove(oldvalue)
                     
@@ -126,11 +131,11 @@ class AbstractElement(object):
             childlist.add(value)
             
         # Set the field to the new value.
-        self.values[name] = value
+        self._values[name] = value
     
     def __dir__(self):
         """Returns the field names specified by this Element."""
-        return self.fields.keys()
+        return self._fields.keys()
        
        
 class MetaModel:
@@ -174,7 +179,7 @@ class MetaModel:
             raise KeyError("Redefinition of Element '{0}'".format(name))
         
         # Create the Element as a subclass of AbstractElement.
-        self.elements[name]=r=type(name, (AbstractElement,), dict(fields=dict()))
+        self.elements[name]=r=type(name, (AbstractElement,), dict(_fields=dict()))
         
         # Return the new Element
         return r
@@ -183,24 +188,34 @@ class MetaModel:
         """Adds an Attribute to an Element."""
 
         # Verify that there are no fields with the same name.
-        if name in of.fields:
-            raise KeyError("Redefinition of {1} '{0}'".format(name, of.fields[name].type))
+        if name in of._fields:
+            raise KeyError("Redefinition of {1} '{0}'".format(name, of._fields[name].type))
+
+        # Disallow starting with an underscore
+        if name[0]=="_":
+            raise KeyError("Attributes can not start with an underscore: {0}".format(name))
 
         # Add the field
-        of.fields[name] = FieldDescriptor(FieldDescriptor.ATTRIBUTE)
+        of._fields[name] = FieldDescriptor(FieldDescriptor.ATTRIBUTE)
         
     def relation(self, parent, child, name, listname):
         """Creates a relation between 'parent' and 'child'."""
 
         # Verify that there are no fields with the same names.
-        if name in child.fields:
-            raise KeyError("Redefinition of {1} '{0}'".format(name, child.fields[name].type))
-        if listname in parent.fields:
-            raise KeyError("Redefinition of {1} '{0}'".format(listname, parent.fields[listname].type))
+        if name in child._fields:
+            raise KeyError("Redefinition of {1} '{0}'".format(name, child._fields[name].type))
+        if listname in parent._fields:
+            raise KeyError("Redefinition of {1} '{0}'".format(listname, parent._fields[listname].type))
+        
+        # Disallow starting with an underscore
+        if name[0]=="_":
+            raise AttributeError("Relation names can not start with an underscore: {0}".format(name))
+        if listname[0]=="_":
+            raise AttributeError("Relation listnames can not start with an underscore: {0}".format(listname))
 
         # Add the fields.
-        child.fields[name] = FieldDescriptor(FieldDescriptor.PARENT, listname=listname, elementtype=parent)
-        parent.fields[listname] = FieldDescriptor(FieldDescriptor.CHILDLIST, name=name, elementtype=child)
+        child._fields[name] = FieldDescriptor(FieldDescriptor.PARENT, listname=listname, elementtype=parent)
+        parent._fields[listname] = FieldDescriptor(FieldDescriptor.CHILDLIST, name=name, elementtype=child)
         
     def load(self, filename):
         """Loads the instance of this MetaModel specified by 
@@ -212,7 +227,7 @@ class MetaModel:
     def __str__(self):
         r=["MetaModel object at 0x{0:x}:".format(id(self))]
         for (k,v) in self.elements.items():
-            fields = "\n    ".join([w.describe(l) for (l,w) in v.fields.items()])
+            fields = "\n    ".join([w.describe(l) for (l,w) in v._fields.items()])
             if fields:
                 fields = "\n    " + fields;
             r.append("Element {0}{1}".format(k, fields))
@@ -245,19 +260,23 @@ class ModelInstance:
         """Adds the element to the __repr array. 
         Dependencies are added first."""
         if el in self.__printed:
-            return self.__printed[el]
+            return
         args=[]
         for (name,desc) in type(el).fields:
             if desc.type == FieldDescriptor.ATTRIBUTE:
                 args.add("{0}={1}".format(name, getattr(el, desc)))
             elif desc.type == FieldDescriptor.PARENT:
-                args.add("{0}={1}".format(name, self.__serialize_element(getattr(el, desc))))
+                par_el = getattr(el, desc)
+                self.__serialize_element(par_el)
+                args.add("{0}={1}".format(name, self.__identifiernames[par_el]))
                 
             
     def __repr__(self):
+        """Creates a string which should create the same instance when loaded
+        with this instance's meta model."""
         self.__repr = r = []
-        self.__printed = dict() # Used to keep track of identifiers.
-        self.__identifiercounter = 0
+        self.__printed = set() # used to check whether an element still needs printing
+        self.__identifiernames = dict() # contains strings like "root="
         
         del self.__printed
         del self.__repr
