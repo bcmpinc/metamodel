@@ -191,14 +191,13 @@ class MetaModel:
         
         # Load the meta-model
         exec(script, modelapi, self.identifiers)
-        
-        pass
 
     def metamodel(self):
         """Returns self. Used during the load process."""
         return self
     
-    def element(self, of, name):
+    # TODO inheritance
+    def element(self, of, name, extends=None):
         """Adds an Element to the meta-model."""
         
         # Verify that the correct value for of is used.
@@ -219,11 +218,11 @@ class MetaModel:
 
         # Verify that there are no fields with the same name.
         if name in of._fields:
-            raise KeyError("Redefinition of {1}".format(of._fields[name].describe()))
+            raise KeyError("Redefinition of field {0}".format(of._fields[name].describe()))
 
         # Disallow starting with an underscore
         if name[0]=="_":
-            raise KeyError("Attributes can not start with an underscore: {0}".format(name))
+            raise AttributeError("Attributes can not start with an underscore: {0}".format(name))
 
         # Add the field
         of._fields[name] = AttributeField(name=name)
@@ -233,15 +232,23 @@ class MetaModel:
 
         # Verify that there are no fields with the same names.
         if parentname in child._fields:
-            raise KeyError("Redefinition of {1} '{0}'".format(name, child._fields[name].type))
+            raise KeyError("Redefinition of field {0}".format(child._fields[parentname].describe()))
         if childname in parent._fields:
-            raise KeyError("Redefinition of {1} '{0}'".format(childname, parent._fields[childname].type))
+            raise KeyError("Redefinition of field {0}".format(parent._fields[childname].describe()))
         
         # Disallow starting with an underscore
         if parentname[0]=="_":
-            raise AttributeError("Association names can not start with an underscore: {0}".format(name))
+            raise AttributeError("Association names can not start with an underscore: {0}".format(parentname))
         if childname[0]=="_":
             raise AttributeError("Association childnames can not start with an underscore: {0}".format(childname))
+
+        # Check duplicate name for self-association
+        if id(parent)==id(child) and parentname==childname:
+            raise AttributeError("Can't use the same names when defining a self-association: {0}".format(childname))
+
+        # Protect against disallowing the creation of a first element.
+        if id(parent)==id(child) and not optional:
+            raise AttributeError("Self-associations must be optional: {0} -> {1}".format(childname, parentname))
 
         # Add the fields.
         child._fields[parentname] = ParentField(name=parentname, childname=childname, elementtype=parent, optional=optional)
@@ -283,7 +290,9 @@ class ModelInstance:
         This instance must be new. A reference to 'self' is returned."""
         with open(filename) as f:
             script = compile(f.read(), filename, "exec")
+        return self.parse(script)
 
+    def parse(self, script):
         # Load the instance
         exec(script, self.model.elements, self.identifiers)
         
