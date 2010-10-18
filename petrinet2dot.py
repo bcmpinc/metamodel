@@ -2,9 +2,9 @@
 
 import metamodel
 
-net = metamodel.load("petrinets.m3")
+net = metamodel.load("petrinets.m2")
 print(net)
-netin = net.load("petrinet.m2")
+netin = net.load("petrinet.m1")
 
 print(netin)
 
