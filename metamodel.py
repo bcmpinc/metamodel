@@ -225,6 +225,7 @@ class MetaModel:
         return ModelInstance(self, script) 
         
     def __str__(self):
+        """Creates a human readable description of the model."""
         r=["MetaModel object at 0x{0:x}:".format(id(self))]
         for (k,v) in self.elements.items():
             fields = "\n    ".join([w.describe(l) for (l,w) in v._fields.items()])
@@ -261,8 +262,11 @@ class ModelInstance:
         Dependencies are added first."""
         if el in self.__printed:
             return
+        self.__printed.add(el)
+
         args=[]
         children=[]
+        # Build the argument list and create a list of children
         for (name,desc) in type(el)._fields.items():
             value = getattr(el, name)
             if desc.type == FieldDescriptor.ATTRIBUTE:
@@ -289,7 +293,6 @@ class ModelInstance:
             
         # Add the element to __repr
         self.__repr.append("{0}{1}({2})".format(names, type(el).__name__, ", ".join(args)))
-        self.__printed.add(el)
         
         # Descent into the children
         for child in children:

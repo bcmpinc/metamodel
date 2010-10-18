@@ -14,3 +14,8 @@ print()
 print(mof.load("petrinets.m3"))
 print()
 print(mof.load("mof.m3"))
+
+with open("moftest.m3", "w") as f:
+    print(mof.load("mof.m3"), file=f)
+    
+print(metamodel.load("moftest.m3"))
