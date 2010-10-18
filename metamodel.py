@@ -1,38 +1,65 @@
 
-class FieldDescriptor:
-    """Describes a field of an Element."""
+
+class FieldDescriptor(object):
+    """Describes a field of an Element. This is an abstract class."""
     
-    # List of field types.
-    ATTRIBUTE = 1
-    CHILDLIST = 2
-    PARENT    = 3
-    
-    def __init__(self, type, **kwargs):
-        """Creates a descriptor. 
-        Parent and child-list arguments come in pairs and need 
-        to be able to find each other. Therefore:
-        * specify a 'listname' argument when creating a PARENT field;
-        * specify a 'name' argument when creating a CHILDLIST field.
-        For type checking of PARENT fields, also specify an
-        'elementtype' argument. For CHILDLIST fields, the 'elementtype'
-        is used for debug output."""
-        self.type = type
-        if type == FieldDescriptor.PARENT:
-            self.listname = kwargs["listname"]
-            self.elementtype = kwargs["elementtype"]
-        elif type == FieldDescriptor.CHILDLIST:
-            self.name = kwargs["name"]
-            self.elementtype = kwargs["elementtype"]
+    def __init__(self, name):
+        """Creates a descriptor."""
+        self.name = name
     
     def describe(self, name):
         """Used for creating a human readable description of a field."""
-        if self.type == FieldDescriptor.ATTRIBUTE:
-            return "<attribute> {0}".format(name)
-        elif self.type == FieldDescriptor.CHILDLIST:
-            return "{0}[] {1}".format(self.elementtype.__name__, name)
-        elif self.type == FieldDescriptor.PARENT:
-            return "{0} {1}".format(self.elementtype.__name__, name)
-        return "<unknown> {1}".format(name)
+        return "<unknown> {1}".format(self.name)
+
+
+class AttributeField(FieldDescriptor):
+    """Describes an attribute of an element."""
+    
+    def __init__(self, name):
+        FieldDescriptor.__init__(self, name)
+        
+    def describe(self):
+        return "<attribute> {0}".format(self.name)
+
+
+class ChildListField(FieldDescriptor):
+    """Describes a list of references to child elements."""
+    
+    def __init__(self, name, parentname, elementtype, limit):
+        """Creates a descriptor for the child-list field of an association.
+        Parent and child-list arguments come in pairs and need 
+        to be able to find each other. Therefore a 'parentname'
+        argument is needed to find this field's counterpart.
+        The 'elementtype' argument is used for debug output.
+        The 'limit' argument limits the amount of children this
+        element can have."""
+        FieldDescriptor.__init__(self, name)
+        self.parentname = parentname
+        self.elementtype = elementtype
+        self.limit = limit
+        
+    def describe(self):
+        return "{0}[{2}] {1}".format(self.elementtype.__name__, self.name, self.limit if self.limit!=None else "")
+
+
+class ParentField(FieldDescriptor):
+    """Describes a reference to a parent object."""
+    
+    def __init__(self, name, childname, elementtype, optional):
+        """Creates a descriptor for the parent field of an association.
+        Parent and child-list arguments come in pairs and need 
+        to be able to find each other. Therefore a 'childname'
+        argument is needed to find this field's counterpart.
+        For type checking the 'elementtype' is used.
+        Argument 'optional' is used to make the association optional."""
+        FieldDescriptor.__init__(self, name)
+        self.childname = childname
+        self.elementtype = elementtype
+        self.optional = optional
+
+    def describe(self):
+        return "{0} {1}{2}".format(self.elementtype.__name__, self.name, " (optional)" if self.optional else "")
+
 
 class AbstractElement(object):
     """The abstract base class used by elements. 
@@ -52,7 +79,7 @@ class AbstractElement(object):
         # Verify that all PARENT type attributes are set.
         err = None
         for (k,v) in self._fields.items():
-            if v.type == FieldDescriptor.PARENT and k not in self._values:
+            if isinstance(v, ParentField) and not v.optional and k not in self._values:
                 if err == None:
                     err = []
                 err.append(k)
@@ -77,7 +104,7 @@ class AbstractElement(object):
         
         # If it is a child-list, we need to initialize it first, 
         # as the return value might be modified.
-        if self._fields[name].type == FieldDescriptor.CHILDLIST:
+        if isinstance(self._fields[name], ChildListField):
             self._values[name] = r = set()
             return r
         
@@ -99,21 +126,21 @@ class AbstractElement(object):
             raise AttributeError("Unknown Attribute '{0}'".format(name))
         
         # Verify that the field is not a childlist
-        if self._fields[name].type == FieldDescriptor.CHILDLIST:
+        if isinstance(self._fields[name], ChildListField):
             raise AttributeError("Setting value of childlist {0}".format(name))
         
         
         # If a parent field is set, also update the parent's childlist and
         # do type checking.
         field = self._fields[name]
-        if field.type == FieldDescriptor.PARENT:
+        if isinstance(field, ParentField):
             # Check that value is of the right type and raise a meaning full error otherwise.
             if not isinstance(value, field.elementtype):
                 raise AttributeError("Setting {0} to value {1}, which is not an {2}".format(
                     name, value, field.elementtype.__name__))
 
             # Get a reference to the parent's childlist.
-            childlist = getattr(value, field.listname)
+            childlist = getattr(value, field.childname)
                 
             # Check of the field was already set
             if name in self._values:
@@ -188,33 +215,33 @@ class MetaModel:
 
         # Verify that there are no fields with the same name.
         if name in of._fields:
-            raise KeyError("Redefinition of {1} '{0}'".format(name, of._fields[name].type))
+            raise KeyError("Redefinition of {1}".format(of._fields[name].describe()))
 
         # Disallow starting with an underscore
         if name[0]=="_":
             raise KeyError("Attributes can not start with an underscore: {0}".format(name))
 
         # Add the field
-        of._fields[name] = FieldDescriptor(FieldDescriptor.ATTRIBUTE)
+        of._fields[name] = AttributeField(name=name)
         
-    def association(self, parent, child, name, listname):
+    def association(self, parent, child, parentname, childname, limit=None, optional=False):
         """Creates a association between 'parent' and 'child'."""
 
         # Verify that there are no fields with the same names.
-        if name in child._fields:
+        if parentname in child._fields:
             raise KeyError("Redefinition of {1} '{0}'".format(name, child._fields[name].type))
-        if listname in parent._fields:
-            raise KeyError("Redefinition of {1} '{0}'".format(listname, parent._fields[listname].type))
+        if childname in parent._fields:
+            raise KeyError("Redefinition of {1} '{0}'".format(childname, parent._fields[childname].type))
         
         # Disallow starting with an underscore
-        if name[0]=="_":
+        if parentname[0]=="_":
             raise AttributeError("Association names can not start with an underscore: {0}".format(name))
-        if listname[0]=="_":
-            raise AttributeError("Association listnames can not start with an underscore: {0}".format(listname))
+        if childname[0]=="_":
+            raise AttributeError("Association childnames can not start with an underscore: {0}".format(childname))
 
         # Add the fields.
-        child._fields[name] = FieldDescriptor(FieldDescriptor.PARENT, listname=listname, elementtype=parent)
-        parent._fields[listname] = FieldDescriptor(FieldDescriptor.CHILDLIST, name=name, elementtype=child)
+        child._fields[parentname] = ParentField(name=parentname, childname=childname, elementtype=parent, optional=optional)
+        parent._fields[childname] = ChildListField(name=childname, parentname=parentname, elementtype=child, limit=limit)
         
     def instance(self):
         return ModelInstance(self)
@@ -223,7 +250,7 @@ class MetaModel:
         """Creates a human readable description of the model."""
         r=["MetaModel object at 0x{0:x}:".format(id(self))]
         for (k,v) in self.elements.items():
-            fields = "\n    ".join([w.describe(l) for (l,w) in v._fields.items()])
+            fields = "\n    ".join([w.describe() for w in v._fields.values()])
             if fields:
                 fields = "\n    " + fields;
             r.append("Element {0}{1}".format(k, fields))
@@ -279,14 +306,15 @@ class ModelInstance:
         # Build the argument list and create a list of children
         for (name,desc) in type(el)._fields.items():
             value = getattr(el, name)
-            if desc.type == FieldDescriptor.ATTRIBUTE:
+            if isinstance(desc, AttributeField):
                 if value != None:
                     args.append("{0}={1}".format(name, repr(value)))
-            elif desc.type == FieldDescriptor.PARENT:
-                par_el = value
-                self.__serialize_element(par_el)
-                args.append("{0}={1}".format(name, self.__identifiernames[par_el][0]))
-            elif desc.type == FieldDescriptor.CHILDLIST:
+            elif isinstance(desc, ParentField):
+                if value!=None:
+                    par_el = value
+                    self.__serialize_element(par_el)
+                    args.append("{0}={1}".format(name, self.__identifiernames[par_el][0]))
+            elif isinstance(desc, ChildListField):
                 children += value
         
         # Get a string with the identifier(s)
