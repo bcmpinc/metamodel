@@ -54,6 +54,36 @@ class ModelErrors(unittest.TestCase):
                 'Attribute(of=el, name="duplicate")\n'
             )
 
+    def test_duplicate_field_subclass_attribute_1(self):
+        with self.assertRaisesRegexp(KeyError, "Redefinition of field"):
+            metamodel.MetaModel(
+                'root = MetaModel()\n'
+                'el = Element(of=root, name="Test")\n'
+                'subel = Element(of=root, name="SubTest", extends=el)\n'
+                'Attribute(of=el, name="duplicate")\n'
+                'Attribute(of=subel, name="duplicate")\n'
+            )
+
+    def test_duplicate_field_subclass_attribute_2(self):
+        with self.assertRaisesRegexp(KeyError, "Redefinition of field"):
+            metamodel.MetaModel(
+                'root = MetaModel()\n'
+                'el = Element(of=root, name="Test")\n'
+                'subel = Element(of=root, name="SubTest", extends=el)\n'
+                'Attribute(of=subel, name="duplicate")\n'
+                'Attribute(of=el, name="duplicate")\n'
+            )
+
+    def test_duplicate_field_subclass_attribute_3(self):
+        with self.assertRaisesRegexp(KeyError, "Redefinition of field"):
+            metamodel.MetaModel(
+                'root = MetaModel()\n'
+                'el = Element(of=root, name="Test")\n'
+                'Attribute(of=el, name="duplicate")\n'
+                'subel = Element(of=root, name="SubTest", extends=el)\n'
+                'Attribute(of=subel, name="duplicate")\n'
+            )
+
     def test_duplicate_field_parent(self):
         with self.assertRaisesRegexp(KeyError, "Redefinition of field"):
             metamodel.MetaModel(
@@ -90,20 +120,20 @@ class ModelErrors(unittest.TestCase):
                 'Attribute(of=el, name="_duplicate")\n'
             )
 
-    def test_underscore_field_attribute(self):
-        with self.assertRaisesRegexp(AttributeError, "Attributes can not start with an underscore"):
+    def test_underscore_field_parent(self):
+        with self.assertRaisesRegexp(AttributeError, "Association parent names can not start with an underscore"):
             metamodel.MetaModel(
                 'root = MetaModel()\n'
                 'el = Element(of=root, name="Test")\n'
-                'Attribute(of=el, name="_duplicate")\n'
+                'Association(parent=el, child=el, parentname="_wrong", childname="good", optional=True)\n'
             )
 
-    def test_underscore_field_attribute(self):
-        with self.assertRaisesRegexp(AttributeError, "Attributes can not start with an underscore"):
+    def test_underscore_field_child_list(self):
+        with self.assertRaisesRegexp(AttributeError, "Association child names can not start with an underscore"):
             metamodel.MetaModel(
                 'root = MetaModel()\n'
                 'el = Element(of=root, name="Test")\n'
-                'Attribute(of=el, name="_duplicate")\n'
+                'Association(parent=el, child=el, parentname="good", childname="_wrong", optional=True)\n'
             )
 
     def test_unsatisfiable_association_constraint(self):
@@ -229,7 +259,7 @@ class InstanceErrors(unittest.TestCase):
     def test_create_subclass_child_missing_required_parent(self):
         with self.assertRaisesRegexp(AttributeError, r"No parents specified for association\(s\)"):
             self.instance.parse(
-                't = SubTest2()\n'
+                'root = SubTest2()\n'
             )
 
     def test_create_child_exceed_limit(self):

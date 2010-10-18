@@ -71,7 +71,7 @@ class AbstractElement(object):
         
         # Create a dictionary for storing the values of the fields.
         self._values = dict()
-        
+
         # Assign the values specified in the constructor.
         for (k,v) in kwargs.items():
             setattr(self,k,v)
@@ -196,8 +196,7 @@ class MetaModel:
         """Returns self. Used during the load process."""
         return self
     
-    # TODO inheritance
-    def element(self, of, name, extends=None):
+    def element(self, of, name, extends=AbstractElement):
         """Adds an Element to the meta-model."""
         
         # Verify that the correct value for of is used.
@@ -207,8 +206,21 @@ class MetaModel:
         if name in self.elements:
             raise KeyError("Redefinition of Element '{0}'".format(name))
         
-        # Create the Element as a subclass of AbstractElement.
-        self.elements[name]=r=type(name, (AbstractElement,), dict(_fields=dict()))
+        # Copy attribute dictionary of superclass
+        if hasattr(extends, "_fields"):
+            fields = dict(extends._fields)
+            # The copy here can be made while not yet all fields for 'extends' have
+            # been defined, the extends._fields is used to add these later.
+        else:
+            fields = dict()
+            
+        # Create the Element as a subclass of extends.
+        self.elements[name]=r=type(name, (extends,), dict(_fields=fields, _subclasses=set()))
+        
+        # Add the new element to the list of subclasses of its superclass.
+        # This allows the superclass to get more fields and add these to this class as well.
+        if extends!=AbstractElement:
+            extends._subclasses.add(r)
         
         # Return the new Element
         return r
@@ -216,31 +228,21 @@ class MetaModel:
     def attribute(self, of, name):
         """Adds an Attribute to an Element."""
 
-        # Verify that there are no fields with the same name.
-        if name in of._fields:
-            raise KeyError("Redefinition of field {0}".format(of._fields[name].describe()))
-
-        # Disallow starting with an underscore
+        # Disallow starting with an underscore.
         if name[0]=="_":
             raise AttributeError("Attributes can not start with an underscore: {0}".format(name))
 
-        # Add the field
-        of._fields[name] = AttributeField(name=name)
+        # (Attempt to) add the field.
+        self.addfield(of, AttributeField(name=name))
         
     def association(self, parent, child, parentname, childname, limit=None, optional=False):
         """Creates a association between 'parent' and 'child'."""
 
-        # Verify that there are no fields with the same names.
-        if parentname in child._fields:
-            raise KeyError("Redefinition of field {0}".format(child._fields[parentname].describe()))
-        if childname in parent._fields:
-            raise KeyError("Redefinition of field {0}".format(parent._fields[childname].describe()))
-        
         # Disallow starting with an underscore
         if parentname[0]=="_":
-            raise AttributeError("Association names can not start with an underscore: {0}".format(parentname))
+            raise AttributeError("Association parent names can not start with an underscore: {0}".format(parentname))
         if childname[0]=="_":
-            raise AttributeError("Association childnames can not start with an underscore: {0}".format(childname))
+            raise AttributeError("Association child names can not start with an underscore: {0}".format(childname))
 
         # Check duplicate name for self-association
         if id(parent)==id(child) and parentname==childname:
@@ -254,10 +256,22 @@ class MetaModel:
         if limit!=None and not (isinstance(limit, int) and limit>0):
             raise AttributeError("Limit '{2}' must be a positive integer: {0} -> {1}".format(childname, parentname, limit))
 
-        # Add the fields.
-        child._fields[parentname] = ParentField(name=parentname, childname=childname, elementtype=parent, optional=optional)
-        parent._fields[childname] = ChildListField(name=childname, parentname=parentname, elementtype=child, limit=limit)
+        # (Attempt to) add the fields.
+        self.addfield(child, ParentField(name=parentname, childname=childname, elementtype=parent, optional=optional))
+        self.addfield(parent, ChildListField(name=childname, parentname=parentname, elementtype=child, limit=limit))
+    
+    def addfield(self, element, fielddescriptor):
+        """Verifies that the field does not redefine an old one, adds the field and asks subclasses to do the same."""
         
+        # Verify that there are no fields with the same names.
+        if fielddescriptor.name in element._fields:
+            raise KeyError("Redefinition of field {0}".format(element._fields[fielddescriptor.name].describe()))
+        element._fields[fielddescriptor.name] = fielddescriptor
+        
+        if hasattr(element, "_subclasses"):
+            for subclass in element._subclasses:
+                self.addfield(subclass, fielddescriptor)
+    
     def instance(self):
         return ModelInstance(self)
         
