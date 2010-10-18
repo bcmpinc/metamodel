@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 
 class FieldDescriptor:
     """Describes a field of an Element."""
@@ -217,12 +216,8 @@ class MetaModel:
         child._fields[name] = FieldDescriptor(FieldDescriptor.PARENT, listname=listname, elementtype=parent)
         parent._fields[listname] = FieldDescriptor(FieldDescriptor.CHILDLIST, name=name, elementtype=child)
         
-    def load(self, filename):
-        """Loads the instance of this MetaModel specified by 
-        the filename."""
-        with open(filename) as f:
-            script = compile(f.read(), filename, "exec")
-        return ModelInstance(self, script) 
+    def instance(self):
+        return ModelInstance(self)
         
     def __str__(self):
         """Creates a human readable description of the model."""
@@ -240,8 +235,11 @@ def load(filename):
         script = compile(f.read(), filename, "exec")
     return MetaModel(script)
 
+
 class ModelInstance:
-    def __init__(self, model, script):
+    def __init__(self, model):
+        """Creates an instance of the metamodel."""
+        
         # Create a reference to the model
         self.model = model
         
@@ -249,13 +247,25 @@ class ModelInstance:
         # By convention, the 'graph' will be stored in instance["root"]
         self.identifiers = dict()
 
+    def load(self, filename):
+        """Loads the instance of this MetaModel specified by the filename.
+        This instance must be new. A reference to 'self' is returned."""
+        with open(filename) as f:
+            script = compile(f.read(), filename, "exec")
+
         # Load the instance
-        exec(script, model.elements, self.identifiers)
+        exec(script, self.model.elements, self.identifiers)
         
         if "root" in self.identifiers:
             self.root = self.identifiers["root"]
         else:
             print("Warning: no 'root' specified.", file=sys.stderr)
+        return self
+        
+    def save(self, filename):
+        """Writes this instance to a file."""
+        with open(filename, "w") as f:
+            print(self, file=f)
             
     def __serialize_element(self, el):
         """Adds the element to the __repr array. 
