@@ -119,7 +119,7 @@ class AbstractElement(object):
             # Check of the field was already set
             if name in self._values:
                 # Ignore the assignment if it does not change the value
-                if id(self._values[name]) == id(value):
+                if id(self._values[name]) == id(self):
                     return
 
                 # Remove the old value
@@ -128,7 +128,7 @@ class AbstractElement(object):
                     childlist.remove(oldvalue)
                     
             # (and) insert the new one.
-            childlist.add(value)
+            childlist.add(self)
             
         # Set the field to the new value.
         self._values[name] = value
@@ -262,23 +262,65 @@ class ModelInstance:
         if el in self.__printed:
             return
         args=[]
-        for (name,desc) in type(el).fields:
+        children=[]
+        for (name,desc) in type(el)._fields.items():
+            value = getattr(el, name)
             if desc.type == FieldDescriptor.ATTRIBUTE:
-                args.add("{0}={1}".format(name, getattr(el, desc)))
+                if value != None:
+                    args.append("{0}={1}".format(name, repr(value)))
             elif desc.type == FieldDescriptor.PARENT:
-                par_el = getattr(el, desc)
+                par_el = value
                 self.__serialize_element(par_el)
-                args.add("{0}={1}".format(name, self.__identifiernames[par_el]))
-                
+                args.append("{0}={1}".format(name, self.__identifiernames[par_el][0]))
+            elif desc.type == FieldDescriptor.CHILDLIST:
+                children += value
+        
+        # Get a string with the identifier(s)
+        if el in self.__identifiernames:
+            names = " = ".join(self.__identifiernames[el])+" = "
+        elif children:
+            # Create identifier names for those elements that need it and not yet have one.
+            names = "e{0}".format(self.__identifiercounter)
+            self.__identifiernames[el] = [names]
+            self.__identifiercounter += 1
+            names += " = "
+        else:
+            names = ""
+            
+        # Add the element to __repr
+        self.__repr.append("{0}{1}( {2} )".format(names, type(el).__name__, ", ".join(args)))
+        self.__printed.add(el)
+        
+        # Descent into the children
+        for child in children:
+            self.__serialize_element(child)
             
     def __repr__(self):
         """Creates a string which should create the same instance when loaded
         with this instance's meta model."""
+        
+        # Create some temporary fields
         self.__repr = r = []
         self.__printed = set() # used to check whether an element still needs printing
-        self.__identifiernames = dict() # contains strings like "root="
+        self.__identifiernames = dict() # contains arrays like ["root"]
+        self.__identifiercounter = 0 # used for generating identifiers
         
+        # Create identifier names for the elements in self.identifiers.
+        self.identifiers["root"] = self.root # Make sure that root is set
+        for (k,v) in self.identifiers.items():
+            if v not in self.__identifiernames:
+                self.__identifiernames[v] = []
+            self.__identifiernames[v].append(k)
+        
+        # Add all elements reachable from the 'root' to 'r'
+        self.__serialize_element(self.root)
+        
+        # Remove the temporary fields
+        del self.__identifiercounter
+        del self.__identifiernames 
         del self.__printed
         del self.__repr
-        return "\n".join(r)
         
+        # Return the description
+        return "\n".join(r)
+
