@@ -136,12 +136,36 @@ class ModelErrors(unittest.TestCase):
                 'Association(parent=el, child=el, parentname="good", childname="_wrong", optional=True)\n'
             )
 
-    def test_unsatisfiable_association_constraint(self):
+    def test_unsatisfiable_self_association_constraint(self):
         with self.assertRaisesRegexp(AttributeError, "Self-associations must be optional"):
             metamodel.MetaModel(
                 'root = MetaModel()\n'
                 'el = el2 = Element(of=root, name="Test")\n'
                 'Association(parent=el, child=el2, parentname="a", childname="b", optional=False)\n'
+            )
+
+    @unittest.expectedFailure
+    def test_unsatisfiable_cyclic_association_constraint(self):
+        with self.assertRaisesRegexp(AttributeError, "Required associations can not be cyclic"):
+            metamodel.MetaModel(
+                'root = MetaModel()\n'
+                'el = Element(of=root, name="Test")\n'
+                'el2 = Element(of=root, name="Test2")\n'
+                'Association(parent=el, child=el2, parentname="a", childname="b", optional=False)\n'
+                'Association(parent=el2, child=el, parentname="c", childname="d", optional=False)\n'
+            )
+
+    @unittest.expectedFailure
+    def test_unsatisfiable_cyclic_association_constraint_3(self):
+        with self.assertRaisesRegexp(AttributeError, "Required associations can not be cyclic"):
+            metamodel.MetaModel(
+                'root = MetaModel()\n'
+                'el = Element(of=root, name="Test")\n'
+                'el2 = Element(of=root, name="Test2")\n'
+                'el3 = Element(of=root, name="Test3")\n'
+                'Association(parent=el, child=el2, parentname="a", childname="b", optional=False)\n'
+                'Association(parent=el2, child=el3, parentname="c", childname="d", optional=False)\n'
+                'Association(parent=el3, child=el, parentname="e", childname="f", optional=False)\n'
             )
 
     def test_negative_association_limit(self):
