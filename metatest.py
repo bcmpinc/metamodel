@@ -110,10 +110,44 @@ class ModelErrors(unittest.TestCase):
         with self.assertRaisesRegexp(AttributeError, "Self-associations must be optional") as cm:
             metamodel.MetaModel(
                 'root = MetaModel()\n'
-                'el = Element(of=root, name="Test")\n'
-                'Association(parent=el, child=el, parentname="a", childname="b", optional=False)\n'
+                'el = el2 = Element(of=root, name="Test")\n'
+                'Association(parent=el, child=el2, parentname="a", childname="b", optional=False)\n'
             )
-        
+
+    def test_negative_association_limit(self):
+        with self.assertRaisesRegexp(AttributeError, "Limit '.*' must be positive") as cm:
+            metamodel.MetaModel(
+                'root = MetaModel()\n'
+                'el = Element(of=root, name="Test")\n'
+                'el2 = Element(of=root, name="Test2")\n'
+                'Association(parent=el, child=el2, parentname="a", childname="b", limit=-15)\n'
+            )
+
+    def test_zero_association_limit(self):
+        with self.assertRaisesRegexp(AttributeError, "Limit '.*' must be positive") as cm:
+            metamodel.MetaModel(
+                'root = MetaModel()\n'
+                'el = Element(of=root, name="Test")\n'
+                'el2 = Element(of=root, name="Test2")\n'
+                'Association(parent=el, child=el2, parentname="a", childname="b", limit=0)\n'
+            )
+
+    def test_association_limit_as_string(self):
+        with self.assertRaisesRegexp(AttributeError, "Limit '.*' must be positive") as cm:
+            metamodel.MetaModel(
+                'root = MetaModel()\n'
+                'el = Element(of=root, name="Test")\n'
+                'el2 = Element(of=root, name="Test2")\n'
+                'Association(parent=el, child=el2, parentname="a", childname="b", limit="2")\n'
+            )
+
+
+class InstanceErrors(unittest.TestCase):
+    def setUp(self):
+        self.instance=MetaModel(
+            'root = '
+        ).instance()
+
 
 if __name__ == '__main__':
     unittest.main()

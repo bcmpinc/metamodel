@@ -250,6 +250,10 @@ class MetaModel:
         if id(parent)==id(child) and not optional:
             raise AttributeError("Self-associations must be optional: {0} -> {1}".format(childname, parentname))
 
+        # Limit must be positive.
+        if limit!=None and not limit>0:
+            raise AttributeError("Limit '{2}' must be positive: {0} -> {1}".format(childname, parentname, limit))
+
         # Add the fields.
         child._fields[parentname] = ParentField(name=parentname, childname=childname, elementtype=parent, optional=optional)
         parent._fields[childname] = ChildListField(name=childname, parentname=parentname, elementtype=child, limit=limit)
