@@ -129,7 +129,6 @@ class AbstractElement(object):
         if isinstance(self._fields[name], ChildListField):
             raise AttributeError("Setting value of childlist {0}".format(name))
         
-        
         # If a parent field is set, also update the parent's childlist and
         # do type checking.
         field = self._fields[name]
@@ -152,7 +151,12 @@ class AbstractElement(object):
                 oldvalue = self._values[name]
                 if oldvalue in childlist:
                     childlist.remove(oldvalue)
-                    
+            
+            # Check whether the parent still has room for another child.
+            otherfield = value._fields[field.childname]
+            if otherfield.limit!=None and len(childlist)>=otherfield.limit:
+                raise KeyError("Setting {0} causes {1} to exceed its limit".format(field.describe(), otherfield.describe()))
+            
             # (and) insert the new one.
             childlist.add(self)
             
