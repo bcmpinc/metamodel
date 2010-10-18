@@ -288,7 +288,7 @@ class ModelInstance:
             names = ""
             
         # Add the element to __repr
-        self.__repr.append("{0}{1}( {2} )".format(names, type(el).__name__, ", ".join(args)))
+        self.__repr.append("{0}{1}({2})".format(names, type(el).__name__, ", ".join(args)))
         self.__printed.add(el)
         
         # Descent into the children
