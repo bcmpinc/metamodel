@@ -16,7 +16,7 @@ class IntegrationTests(unittest.TestCase):
         netin = net.instance().load("petrinet.m1")
         repr(netin)
         
-        netin.identifiers=dict()
+        netin.identifiers = dict(root=netin.identifiers["root"])
         repr(netin)
             
     def test_mof(self):
@@ -38,7 +38,7 @@ class ModelErrors(unittest.TestCase):
     """Test that errors in a meta model are detected."""
     
     def test_duplicate_element(self):
-        with self.assertRaisesRegexp(KeyError, "Redefinition of Element") as cm:
+        with self.assertRaisesRegexp(KeyError, "Redefinition of Element"):
             metamodel.MetaModel(
                 'root = MetaModel()\n'
                 'Element(of=root, name="Duplicate")\n'
@@ -46,7 +46,7 @@ class ModelErrors(unittest.TestCase):
             )
 
     def test_duplicate_field_attribute(self):
-        with self.assertRaisesRegexp(KeyError, "Redefinition of field") as cm:
+        with self.assertRaisesRegexp(KeyError, "Redefinition of field"):
             metamodel.MetaModel(
                 'root = MetaModel()\n'
                 'el = Element(of=root, name="Test")\n'
@@ -55,7 +55,7 @@ class ModelErrors(unittest.TestCase):
             )
 
     def test_duplicate_field_parent(self):
-        with self.assertRaisesRegexp(KeyError, "Redefinition of field") as cm:
+        with self.assertRaisesRegexp(KeyError, "Redefinition of field"):
             metamodel.MetaModel(
                 'root = MetaModel()\n'
                 'el = Element(of=root, name="Test")\n'
@@ -65,7 +65,7 @@ class ModelErrors(unittest.TestCase):
             )
 
     def test_duplicate_field_childlist(self):
-        with self.assertRaisesRegexp(KeyError, "Redefinition of field") as cm:
+        with self.assertRaisesRegexp(KeyError, "Redefinition of field"):
             metamodel.MetaModel(
                 'root = MetaModel()\n'
                 'el = Element(of=root, name="Test")\n'
@@ -75,7 +75,7 @@ class ModelErrors(unittest.TestCase):
             )
 
     def test_duplicate_field_self_reference(self):
-        with self.assertRaisesRegexp(AttributeError, "Can't use the same names when defining a self-association") as cm:
+        with self.assertRaisesRegexp(AttributeError, "Can't use the same names when defining a self-association"):
             metamodel.MetaModel(
                 'root = MetaModel()\n'
                 'el = Element(of=root, name="Test")\n'
@@ -83,7 +83,7 @@ class ModelErrors(unittest.TestCase):
             )
 
     def test_underscore_field_attribute(self):
-        with self.assertRaisesRegexp(AttributeError, "Attributes can not start with an underscore") as cm:
+        with self.assertRaisesRegexp(AttributeError, "Attributes can not start with an underscore"):
             metamodel.MetaModel(
                 'root = MetaModel()\n'
                 'el = Element(of=root, name="Test")\n'
@@ -91,7 +91,7 @@ class ModelErrors(unittest.TestCase):
             )
 
     def test_underscore_field_attribute(self):
-        with self.assertRaisesRegexp(AttributeError, "Attributes can not start with an underscore") as cm:
+        with self.assertRaisesRegexp(AttributeError, "Attributes can not start with an underscore"):
             metamodel.MetaModel(
                 'root = MetaModel()\n'
                 'el = Element(of=root, name="Test")\n'
@@ -99,7 +99,7 @@ class ModelErrors(unittest.TestCase):
             )
 
     def test_underscore_field_attribute(self):
-        with self.assertRaisesRegexp(AttributeError, "Attributes can not start with an underscore") as cm:
+        with self.assertRaisesRegexp(AttributeError, "Attributes can not start with an underscore"):
             metamodel.MetaModel(
                 'root = MetaModel()\n'
                 'el = Element(of=root, name="Test")\n'
@@ -107,7 +107,7 @@ class ModelErrors(unittest.TestCase):
             )
 
     def test_unsatisfiable_association_constraint(self):
-        with self.assertRaisesRegexp(AttributeError, "Self-associations must be optional") as cm:
+        with self.assertRaisesRegexp(AttributeError, "Self-associations must be optional"):
             metamodel.MetaModel(
                 'root = MetaModel()\n'
                 'el = el2 = Element(of=root, name="Test")\n'
@@ -115,7 +115,7 @@ class ModelErrors(unittest.TestCase):
             )
 
     def test_negative_association_limit(self):
-        with self.assertRaisesRegexp(AttributeError, "Limit '.*' must be positive") as cm:
+        with self.assertRaisesRegexp(AttributeError, "Limit '.*' must be a positive integer"):
             metamodel.MetaModel(
                 'root = MetaModel()\n'
                 'el = Element(of=root, name="Test")\n'
@@ -124,7 +124,7 @@ class ModelErrors(unittest.TestCase):
             )
 
     def test_zero_association_limit(self):
-        with self.assertRaisesRegexp(AttributeError, "Limit '.*' must be positive") as cm:
+        with self.assertRaisesRegexp(AttributeError, "Limit '.*' must be a positive integer"):
             metamodel.MetaModel(
                 'root = MetaModel()\n'
                 'el = Element(of=root, name="Test")\n'
@@ -133,7 +133,7 @@ class ModelErrors(unittest.TestCase):
             )
 
     def test_association_limit_as_string(self):
-        with self.assertRaisesRegexp(AttributeError, "Limit '.*' must be positive") as cm:
+        with self.assertRaisesRegexp(AttributeError, "Limit '.*' must be a positive integer"):
             metamodel.MetaModel(
                 'root = MetaModel()\n'
                 'el = Element(of=root, name="Test")\n'
@@ -143,11 +143,104 @@ class ModelErrors(unittest.TestCase):
 
 
 class InstanceErrors(unittest.TestCase):
+    """Test whether instance creation will raise errors when necessary."""
+    
     def setUp(self):
-        self.instance=MetaModel(
-            'root = '
+        self.instance=metamodel.MetaModel(
+            'root = MetaModel()\n'
+            'el = Element(of=root, name="Test")\n'
+            'Element(of=root, name="SubTest", extends=el)\n'
+            'el2 = Element(of=root, name="Test2")\n'
+            'Element(of=root, name="SubTest2", extends=el2)\n'
+            'Attribute(of=el, name="attr")\n'
+            'Association(parent=el, child=el2, parentname="a", childname="a", limit=2)\n'
+            'Association(parent=el, child=el2, parentname="b", childname="b", optional=True)\n'
         ).instance()
 
+    def test_set_unknown_attribute(self):
+        with self.assertRaisesRegexp(AttributeError, "Unknown Attribute 'unknown'"):
+            self.instance.parse(
+                'root = Test(unknown=3)\n'
+            )
 
+    def test_get_unknown_attribute(self):
+        self.instance.parse(
+            'root = Test()\n'
+        )
+        with self.assertRaisesRegexp(AttributeError, "Unknown Attribute 'unknown'"):
+            self.instance.identifiers["root"].unknown
+
+    def test_known_attribute(self):
+        self.instance.parse(
+            'root = Test(attr=3)\n'
+        )
+        self.assertEqual(self.instance.identifiers["root"].attr, 3)
+        self.instance.identifiers["root"].attr=4
+        self.assertEqual(self.instance.identifiers["root"].attr, 4)
+
+    def test_subclass_attribute(self):
+        self.instance.parse(
+            'root = SubTest(attr=3)\n'
+        )
+        self.assertEqual(self.instance.identifiers["root"].attr, 3)
+        self.instance.identifiers["root"].attr=4
+        self.assertEqual(self.instance.identifiers["root"].attr, 4)
+
+    def test_set_child_list(self):
+        self.instance.parse(
+            'root = Test()\n'
+        )
+        with self.assertRaisesRegexp(AttributeError, "Setting value of childlist 'a'"):
+            self.instance.identifiers["root"].a=2
+
+    def test_create_child_good(self):
+        self.instance.parse(
+            'root = Test()\n'
+            'Test2(a=root, b=root)\n'
+        )
+
+    def test_create_child_optional(self):
+        self.instance.parse(
+            'root = Test()\n'
+            'Test2(a=root)\n'
+        )
+
+    def test_create_child_of_subclass(self):
+        self.instance.parse(
+            'root = SubTest()\n'
+            'Test2(a=root)\n'
+        )
+
+    def test_create_child_wrong_type(self):
+        with self.assertRaisesRegexp(AttributeError, "which is not an"):
+            self.instance.parse(
+                'root = Test()\n'
+                't = Test2(a=root, b=root)\n'
+                'Test2(a=root, b=t)\n'
+            )
+
+    def test_create_child_missing_required_parent(self):
+        with self.assertRaisesRegexp(AttributeError, r"No parents specified for association\(s\)"):
+            self.instance.parse(
+                'root = Test()\n'
+                't = Test2()\n'
+            )
+
+    def test_create_subclass_child_missing_required_parent(self):
+        with self.assertRaisesRegexp(AttributeError, r"No parents specified for association\(s\)"):
+            self.instance.parse(
+                't = SubTest2()\n'
+            )
+
+    def test_create_child_exceed_limit(self):
+        with self.assertRaisesRegexp(KeyError, "to exceed its limit"):
+            self.instance.parse(
+                'root = Test()\n'
+                'Test2(a=root)\n'
+                'Test2(a=root)\n'
+                'Test2(a=root)\n'
+            )
+
+            
 if __name__ == '__main__':
     unittest.main()

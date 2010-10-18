@@ -127,15 +127,15 @@ class AbstractElement(object):
         
         # Verify that the field is not a childlist
         if isinstance(self._fields[name], ChildListField):
-            raise AttributeError("Setting value of childlist {0}".format(name))
+            raise AttributeError("Setting value of childlist '{0}'".format(name))
         
         # If a parent field is set, also update the parent's childlist and
         # do type checking.
         field = self._fields[name]
         if isinstance(field, ParentField):
-            # Check that value is of the right type and raise a meaning full error otherwise.
+            # Check that value is of the right type and raise a meaningful error otherwise.
             if not isinstance(value, field.elementtype):
-                raise AttributeError("Setting {0} to value {1}, which is not an {2}".format(
+                raise AttributeError("Setting '{0}' to value {1}, which is not an {2}".format(
                     name, value, field.elementtype.__name__))
 
             # Get a reference to the parent's childlist.
@@ -251,8 +251,8 @@ class MetaModel:
             raise AttributeError("Self-associations must be optional: {0} -> {1}".format(childname, parentname))
 
         # Limit must be positive.
-        if limit!=None and not limit>0:
-            raise AttributeError("Limit '{2}' must be positive: {0} -> {1}".format(childname, parentname, limit))
+        if limit!=None and not (isinstance(limit, int) and limit>0):
+            raise AttributeError("Limit '{2}' must be a positive integer: {0} -> {1}".format(childname, parentname, limit))
 
         # Add the fields.
         child._fields[parentname] = ParentField(name=parentname, childname=childname, elementtype=parent, optional=optional)
@@ -300,10 +300,9 @@ class ModelInstance:
         # Load the instance
         exec(script, self.model.elements, self.identifiers)
         
-        if "root" in self.identifiers:
-            self.root = self.identifiers["root"]
-        else:
-            print("Warning: no 'root' specified.", file=sys.stderr)
+        if "root" not in self.identifiers:
+            raise KeyError("Instance description does not specify a 'root' element")
+        
         return self
         
     def save(self, filename):
@@ -356,6 +355,10 @@ class ModelInstance:
     def __repr__(self):
         """Creates a string which should create the same instance when loaded
         with this instance's meta model."""
+
+        # Make sure that root is set
+        if "root" not in self.identifiers:
+            raise KeyError("ModelInstance has no root specified")
         
         # Create some temporary fields
         self.__repr = r = []
@@ -364,14 +367,13 @@ class ModelInstance:
         self.__identifiercounter = 0 # used for generating identifiers
         
         # Create identifier names for the elements in self.identifiers.
-        self.identifiers["root"] = self.root # Make sure that root is set
         for (k,v) in self.identifiers.items():
             if v not in self.__identifiernames:
                 self.__identifiernames[v] = []
             self.__identifiernames[v].append(k)
         
         # Add all elements reachable from the 'root' to 'r'
-        self.__serialize_element(self.root)
+        self.__serialize_element(self.identifiers["root"])
         
         # Remove the temporary fields
         del self.__identifiercounter
