@@ -58,7 +58,7 @@ class AbstractElement(object):
                 err.append(k)
         # Raise an error if not.
         if err != None:
-            raise AttributeError("No parents specified for relation(s) {0}".format(err))
+            raise AttributeError("No parents specified for association(s) {0}".format(err))
                 
         
     def __getattr__(self, name):
@@ -155,7 +155,7 @@ class MetaModel:
             MetaModel=self.metamodel,
             Element=self.element,
             Attribute=self.attribute,
-            Relation=self.relation,
+            Association=self.association,
         )
         
         # Load the meta-model
@@ -197,8 +197,8 @@ class MetaModel:
         # Add the field
         of._fields[name] = FieldDescriptor(FieldDescriptor.ATTRIBUTE)
         
-    def relation(self, parent, child, name, listname):
-        """Creates a relation between 'parent' and 'child'."""
+    def association(self, parent, child, name, listname):
+        """Creates a association between 'parent' and 'child'."""
 
         # Verify that there are no fields with the same names.
         if name in child._fields:
@@ -208,9 +208,9 @@ class MetaModel:
         
         # Disallow starting with an underscore
         if name[0]=="_":
-            raise AttributeError("Relation names can not start with an underscore: {0}".format(name))
+            raise AttributeError("Association names can not start with an underscore: {0}".format(name))
         if listname[0]=="_":
-            raise AttributeError("Relation listnames can not start with an underscore: {0}".format(listname))
+            raise AttributeError("Association listnames can not start with an underscore: {0}".format(listname))
 
         # Add the fields.
         child._fields[name] = FieldDescriptor(FieldDescriptor.PARENT, listname=listname, elementtype=parent)
