@@ -136,8 +136,9 @@ The most important items provided by the **metamodel** module are:
    their attributes, parents and children available as fields. It has the following 
    private fields for storing meta data:
    - `_fields`, a static field, containing dictionary of `FieldDescriptor`s;
-   - `_values`, a dictionary containing the values that are set.
-   - `_subclasses`, a static field listing the immediate subclasses.
+   - `_values`, a dictionary containing the values that are set;
+   - `_subclasses`, a static field listing the immediate subclasses;
+   - `_abstract`, which is `True` if the class is abstract.
  - `ModelInstance` is a class that contains an instance of a `MetaModel`.
    Instances can be loaded from files using `load(filename)`. Instance descriptions
    can be parsed using `parse(script)`. Its root element can be obtained with `root()`.
@@ -156,13 +157,12 @@ The most important items provided by the **metamodel** module are:
 Known bugs
 ----------
 
- - Abstract classes are not yet supported.
  - TransformationRule is untested.
 
 
 Copyright
 ---------
-Copyright &copy; 2010 Bauke Conijn `<bcmpinc` (at) `sourceforge.net>`
+Copyright &copy; 2010 Bauke Conijn <bcmpinc (at) sourceforge.net>
 License GPLv3+: [GNU GPL version 3 or (at your option) any later version.](http://gnu.org/licenses/gpl.html)
 
 This  is  free  software:  you  are free to change and redistribute it.

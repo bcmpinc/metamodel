@@ -229,7 +229,8 @@ class InstanceErrors(unittest.TestCase):
         self.instance=metamodel.MetaModel(
             'root = MetaModel()\n'
             'el = Element(of=root, name="Test")\n'
-            'Element(of=root, name="SubTest", extends=el)\n'
+            'ab = Element(of=root, name="Abstract", extends=el, abstract=True)\n'
+            'Element(of=root, name="SubTest", extends=ab)\n'
             'el2 = Element(of=root, name="Test2")\n'
             'Element(of=root, name="SubTest2", extends=el2)\n'
             'Attribute(of=el, name="attr")\n'
@@ -321,6 +322,11 @@ class InstanceErrors(unittest.TestCase):
                 'Test2(a=root)\n'
             )
 
+    def test_create_abstract_element(self):
+        with self.assertRaisesRegexp(RuntimeError, "Can't instantiate abstract class"):
+            self.instance.parse(
+                'root = Abstract()\n'
+            )
             
 if __name__ == '__main__':
     unittest.main()

@@ -7,6 +7,7 @@ attribute=Element(of=root, name="Attribute")
 association=Element(of=root, name="Association")
 
 Attribute(of=element, name="name")
+Attribute(of=element, name="abstract")
 Attribute(of=attribute, name="name")
 Attribute(of=association, name="parentname")
 Attribute(of=association, name="childname")

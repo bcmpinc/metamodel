@@ -89,6 +89,9 @@ class AbstractElement(object):
     def __init__(self, **kwargs):
         """Creates an instance of the element."""
         
+        if self._abstract:
+            raise RuntimeError("Can't instantiate abstract class {0}".format(self.__class__.__name__))
+        
         # Create a dictionary for storing the values of the fields.
         self._values = dict()
 
@@ -113,7 +116,11 @@ class AbstractElement(object):
         If the requested field is a child-list and is not
         yet set, it is initialized with an empty set.
         This set can (but usually should not) be modified."""
-        
+
+        # If name start with an underscore, it is an internal attribute
+        if name[0]=="_":
+            return self.__dict__[name]
+
         # is the value set?, return it.
         if name in self._values:
             return self._values[name]
@@ -216,7 +223,7 @@ class MetaModel:
         """Returns self. Used during the load process."""
         return self
     
-    def element(self, of, name, extends=AbstractElement):
+    def element(self, of, name, extends=AbstractElement, abstract=False):
         """Adds an Element to the meta-model."""
         
         # Verify that the correct value for of is used.
@@ -235,7 +242,7 @@ class MetaModel:
             fields = dict()
             
         # Create the Element as a subclass of extends.
-        self.elements[name]=r=type(name, (extends,), dict(_fields=fields, _subclasses=set()))
+        self.elements[name]=r=type(name, (extends,), dict(_fields=fields, _subclasses=set(), _abstract=abstract))
         
         # Add the new element to the list of subclasses of its superclass.
         # This allows the superclass to get more fields and add these to this class as well.
