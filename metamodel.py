@@ -1,5 +1,9 @@
 
 from __future__ import print_function
+import keyword
+import sys
+from weakref import WeakKeyDictionary
+
 
 class FieldDescriptor(object):
     """Describes a field of an Element. This is an abstract class."""
@@ -262,11 +266,18 @@ class MetaModel:
         self.addfield(parent, ChildListField(name=childname, parentname=parentname, elementtype=child, limit=limit))
     
     def addfield(self, element, fielddescriptor):
-        """Verifies that the field does not redefine an old one, adds the field and asks subclasses to do the same."""
+        """Verifies that the field does not redefine an old one, 
+        adds the field and asks subclasses to do the same."""
         
         # Verify that there are no fields with the same names.
         if fielddescriptor.name in element._fields:
             raise KeyError("Redefinition of field {0}".format(element._fields[fielddescriptor.name].describe()))
+
+        # Disallow the use of python keywords
+        if keyword.iskeyword(fielddescriptor.name):
+            raise SyntaxError("Python keywords are not allowed: {0}".format(fielddescriptor.name))
+
+        # Add the field
         element._fields[fielddescriptor.name] = fielddescriptor
         
         if hasattr(element, "_subclasses"):
@@ -307,8 +318,11 @@ class ModelInstance:
     def load(self, filename):
         """Loads the instance of this MetaModel specified by the filename.
         This instance must be new. A reference to 'self' is returned."""
-        with open(filename) as f:
-            script = compile(f.read(), filename, "exec")
+        if filename=="-":
+            script = compile(sys.stdin.read(), sys.stdin.name, "exec")
+        else:    
+            with open(filename) as f:
+                script = compile(f.read(), filename, "exec")
         return self.parse(script)
 
     def parse(self, script):
@@ -402,8 +416,6 @@ class ModelInstance:
         # Return the description
         return "\n".join(r)
 
-from weakref import WeakKeyDictionary
-
 # Used by TransformationRule to determine whether to enter the pending rules 
 # handling loop, or not.
 transforming = False
@@ -424,8 +436,12 @@ class TransformationRule:
     with different arguments is meaningless, as only the first time the 
     arguments are passed to the function.
     
-    Third, the decorated function has a 'later' method, that can be 
-    used to apply a rule at a later point in time."""
+    Also, the decorated function has a 'later' method, that can be 
+    used to apply a rule at a later point in time.
+    
+    TransformationRules work independant of MetaModels and ModelInstances.
+    Therefore you can also apply them on non-ModelInstances or create
+    non-ModelInstances as a result."""
     
     def __init__(self, f):
         self.f = f

@@ -56,6 +56,14 @@ class ModelErrors(unittest.TestCase):
                 'Attribute(of=el, name="duplicate")\n'
             )
 
+    def test_keyword_attribute(self):
+        with self.assertRaisesRegexp(SyntaxError, "Python keywords are not allowed"):
+            metamodel.MetaModel(
+                'root = MetaModel()\n'
+                'el = Element(of=root, name="Test")\n'
+                'Attribute(of=el, name="import")\n'
+            )
+
     def test_duplicate_field_subclass_attribute_1(self):
         with self.assertRaisesRegexp(KeyError, "Redefinition of field"):
             metamodel.MetaModel(
