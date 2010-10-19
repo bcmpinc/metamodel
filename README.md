@@ -99,6 +99,7 @@ The syntax of this language in Lazy BNF/EBNF notation is:
 
 Because we use the Python parser, `Identifier`s, `ElementName`s and `FieldName`s 
 can not be Python keywords. Every meta model and instance must assign an element to the `root` identifier.
+Even though the syntax does not mention it, Python comments are allowed.
 
 The syntax as railroad diagrams: 
 (Created with an online [railroad generator](http://www-cgi.uni-regensburg.de/~brf09510/syntax.html).)
@@ -117,6 +118,7 @@ The syntax as railroad diagrams:
 
 ### Value
 ![(value railroad diagram)](/bcmpinc/metamodel/raw/master/images/syntax_value.png)
+
 
 API
 ---
@@ -150,10 +152,12 @@ The most important items provided by the **metamodel** module are:
    are the same as for the transformation function. The transformation function must take 
    at least one parameter, which is the element that is transformed.
    
+   
 Known bugs
 ----------
 
  - Abstract classes are not yet supported.
+ - TransformationRule is untested.
 
 
 Copyright
