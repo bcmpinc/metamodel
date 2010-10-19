@@ -316,7 +316,7 @@ class ModelInstance:
         exec(script, self.model.elements, self.identifiers)
         
         if "root" not in self.identifiers:
-            raise KeyError("Instance description does not specify a 'root' element")
+            raise KeyError("Instance description does not specify the required 'root' element")
         
         return self
         
@@ -324,6 +324,9 @@ class ModelInstance:
         """Writes this instance to a file."""
         with open(filename, "w") as f:
             print(self, file=f)
+    
+    def root(self):
+        return self.identifiers["root"]
             
     def __serialize_element(self, el):
         """Adds the element to the __repr array. 
@@ -401,6 +404,14 @@ class ModelInstance:
 
 from weakref import WeakKeyDictionary
 
+# Used by TransformationRule to determine whether to enter the pending rules 
+# handling loop, or not.
+transforming = False
+
+# This set will contain all rules that have pending transformations.
+# It will be empty when the initial transformation call returns.
+pending_rules = set()
+
 class TransformationRule:
     """Changes the meaning of a function, such that it can be used to get 
     the result of applying it to an element. It memorizes the result of 
@@ -411,20 +422,62 @@ class TransformationRule:
     the source instance (or a tuple of such elements). Additional arguments
     can be passed, however, calling the resulting function multiple times 
     with different arguments is meaningless, as only the first time the 
-    arguments are passed to the function."""
+    arguments are passed to the function.
+    
+    Third, the decorated function has a 'later' method, that can be 
+    used to apply a rule at a later point in time."""
+    
     def __init__(self, f):
         self.f = f
-        self.d = WeakKeyDictionary()
+        self.cache = WeakKeyDictionary()
+        self.delayed = WeakKeyDictionary()
     
     def __call__(self, element, *args, **kwargs):
+        # Are we in the middle of a transformation. If not, set to true and 
+        # be the one who applies pending transformations.
+        global transforming
+        if not transforming:
+            # This is the initial call, so we delay it, enter transformation 
+            # mode and divert to the pending rules handling loop.
+            transforming = True
+            self.later(element, *args, **kwargs)
+            self.__handle_pending()
+            # We are done.
+            transforming = False
+            # Return the requested element.
+            return self.cache[element]
+        
+        # Check if we have performed the transformation already.
         try:
-            r = self.d[element]
+            r = self.cache[element]
+            # Check for circular transformation.
             if r == TransformationRule:
                 raise RuntimeError("Applying circular transformation '{0}'".format(self.f.__name__))
+            # Return the cached value.
             return r
         except KeyError:
-            # set the dict value for the current element to 'being transformed'
-            self.d[element] = TransformationRule
-            self.d[element] = r = self.f(element, *args, **kwargs)
-            return r
+            # Not converted, so do that next.
+            pass
+        # set the dict value for the current element to 'being transformed'
+        self.cache[element] = TransformationRule
+        self.cache[element] = r = self.f(element, *args, **kwargs)
+        return r
+    
+    def later(self, element, *args, **kwargs):
+        """Will delay the transformation of the specified element, 
+        until the transformation returns to the pending rule handling loop."""
+        if element in self.cache:
+            return
+        self.delayed[element] = (args, kwargs)
+        pending_rules.add(self)
+    
+    def __handle_pending(self):
+        """Executes the pending rules handling loop."""
+        while len(pending_rules)>0:
+            # Obtain a pending rule
+            rule = pending_rules.pop()
+            
+            while len(rule.delayed)>0:
+                (element, (args, kwargs)) = rule.delayed.popitem()
+                rule(element, *args, **kwargs)
     

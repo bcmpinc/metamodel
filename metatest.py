@@ -18,7 +18,7 @@ class IntegrationTests(unittest.TestCase):
         netin = net.instance().load("petrinet.m1")
         repr(netin)
         
-        netin.identifiers = dict(root=netin.identifiers["root"])
+        netin.identifiers = dict(root=netin.root())
         repr(netin)
             
     def test_mof(self):
@@ -224,30 +224,30 @@ class InstanceErrors(unittest.TestCase):
             'root = Test()\n'
         )
         with self.assertRaisesRegexp(AttributeError, "Unknown Attribute 'unknown'"):
-            self.instance.identifiers["root"].unknown
+            self.instance.root().unknown
 
     def test_known_attribute(self):
         self.instance.parse(
             'root = Test(attr=3)\n'
         )
-        self.assertEqual(self.instance.identifiers["root"].attr, 3)
-        self.instance.identifiers["root"].attr=4
-        self.assertEqual(self.instance.identifiers["root"].attr, 4)
+        self.assertEqual(self.instance.root().attr, 3)
+        self.instance.root().attr=4
+        self.assertEqual(self.instance.root().attr, 4)
 
     def test_subclass_attribute(self):
         self.instance.parse(
             'root = SubTest(attr=3)\n'
         )
-        self.assertEqual(self.instance.identifiers["root"].attr, 3)
-        self.instance.identifiers["root"].attr=4
-        self.assertEqual(self.instance.identifiers["root"].attr, 4)
+        self.assertEqual(self.instance.root().attr, 3)
+        self.instance.root().attr=4
+        self.assertEqual(self.instance.root().attr, 4)
 
     def test_set_child_list(self):
         self.instance.parse(
             'root = Test()\n'
         )
         with self.assertRaisesRegexp(AttributeError, "Setting value of childlist 'a'"):
-            self.instance.identifiers["root"].a=2
+            self.instance.root().a=2
 
     def test_create_child_good(self):
         self.instance.parse(
