@@ -84,19 +84,18 @@ functions and classes to be available in the scope in which it is executed.
 
 The syntax of this language in Lazy BNF/EBNF notation is:
 
-><pre>
-Model = Element+ .
-Element = Identifier "=" Element |
-          ElementName "(" FieldList ")" NewLine.
-FieldList = ( Field ("," Field)* )?.
-Field = FieldName "=" Value.
-Value = Identifier | 
-        "'" Character* "'" |
-        '"' Character* '"' |
-        digit+ |
-        True |
-        False.
-</pre>
+  Model = Element+ .
+  Element = Identifier "=" Element |
+            ElementName "(" FieldList ")" NewLine.
+  FieldList = ( Field ("," Field)* )?.
+  Field = FieldName "=" Value.
+  Value = Identifier | 
+          "'" Character* "'" |
+          '"' Character* '"' |
+          digit+ |
+          True |
+          False.
+
 
 Because we use the Python parser, `Identifier`s, `ElementName`s and `FieldName`s 
 can not be Python keywords. Every meta model and instance must assign an element to the `root` identifier.
@@ -105,19 +104,19 @@ The syntax as railroad diagrams:
 (Created with an online [railroad generator](http://www-cgi.uni-regensburg.de/~brf09510/syntax.html).)
 
 ### Model
-![(model railroad diagram)](images/syntax_model.png)
+![(model railroad diagram)](raw/master/images/syntax_model.png)
 
 ### Element
-![(element railroad diagram)](images/syntax_element.png)
+![(element railroad diagram)](raw/master/images/syntax_element.png)
 
 ### FieldList
-![(fieldlist railroad diagram)](images/syntax_fieldlist.png)
+![(fieldlist railroad diagram)](raw/master/images/syntax_fieldlist.png)
 
 ### Field
-![(field railroad diagram)](images/syntax_field.png)
+![(field railroad diagram)](raw/master/images/syntax_field.png)
 
 ### Value
-![(value railroad diagram)](images/syntax_value.png)
+![(value railroad diagram)](raw/master/images/syntax_value.png)
 
 API
 ---
