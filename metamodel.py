@@ -1,4 +1,5 @@
 
+from __future__ import print_function
 
 class FieldDescriptor(object):
     """Describes a field of an Element. This is an abstract class."""
@@ -398,3 +399,32 @@ class ModelInstance:
         # Return the description
         return "\n".join(r)
 
+from weakref import WeakKeyDictionary
+
+class TransformationRule:
+    """Changes the meaning of a function, such that it can be used to get 
+    the result of applying it to an element. It memorizes the result of 
+    applying the function to an element, for as long as the element exists.
+    It also checks for applying transformation rules in a circular fashion.
+    
+    The first argument of the decorated function must be an element from
+    the source instance (or a tuple of such elements). Additional arguments
+    can be passed, however, calling the resulting function multiple times 
+    with different arguments is meaningless, as only the first time the 
+    arguments are passed to the function."""
+    def __init__(self, f):
+        self.f = f
+        self.d = WeakKeyDictionary()
+    
+    def __call__(self, element, *args, **kwargs):
+        try:
+            r = self.d[element]
+            if r == TransformationRule:
+                raise RuntimeError("Applying circular transformation '{0}'".format(self.f.__name__))
+            return r
+        except KeyError:
+            # set the dict value for the current element to 'being transformed'
+            self.d[element] = TransformationRule
+            self.d[element] = r = self.f(element, *args, **kwargs)
+            return r
+    
