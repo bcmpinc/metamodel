@@ -32,51 +32,56 @@ netin = net.instance().load(sys.argv[1])
 
 @metamodel.TransformationRule
 def petrinet2graphviz(petrinet):
-    global transitioncount
-    transitioncount=0
+    global elementcount
+    elementcount=0
     r = ["digraph {"]
     r.append("// Places:")
     for place in petrinet.places:
-        r.append(place2graphviz(place))
+        element2graphviz(place, r, "circle")
     r.append("\n// Transitions:")
     for transition in petrinet.transitions:
-        r.append(transition2graphviz(transition))
+        element2graphviz(transition, r, "square")
     r.append("\n// Edges:")
     for place in petrinet.places:
         for edge in place.totransitions:
-            inedge2graphviz(edge, r)
+            edge2graphviz(edge, r)
         for edge in place.fromtransitions:
-            outedge2graphviz(edge, r)
+            edge2graphviz(edge, r)
     r.append("}\n")
     return "\n".join(r)
 
 @metamodel.TransformationRule
-def place2graphviz(place):
-    return '{0} [shape=circle];'.format(place.name)
-
-@metamodel.TransformationRule
-def transition2graphviz(transition):
-    return '{0} [shape=box, label=""];'.format(transition2name(transition))
+def element2graphviz(element,r,shape):
+    global elementcount
+    a = ["shape={0}".format(shape)]
     
-@metamodel.TransformationRule
-def transition2name(transition):
-    global transitioncount
-    transitioncount += 1
-    return "T_{0}".format(transitioncount)
+    tag = "_place_{0}".format(elementcount)
+    elementcount += 1
+    if hasattr(element, "name"):
+        nametag = tag
+        tag = 'P_{0}'.format(element.name)
+        r.append('{0} [label="{1}", shape=none];'.format(nametag, element.name))
+        r.append('{0} -> {1} [color=none, len=0.4];'.format(nametag, tag))
+        
+    a.append('fixedsize=true')
+    if hasattr(element, "tokens"):
+        if element.tokens<6:
+            a.append('label="{0}"'.format(["","·",":","∴","∷","⁙"][element.tokens]))
+            a.append('fontsize=32')
+        else:
+            a.append('label="{0}"'.format(element.tokens))
+    else:
+        a.append('label=""')
+        
+    r.append('{0} [{1}];'.format(tag, ",".join(a)))
+    return tag
 
 @metamodel.TransformationRule
-def inedge2graphviz(edge, r):
+def edge2graphviz(edge, r):
     a=[]
     if edge.weight!=None and edge.weight!=1:
         a.append('label="{0}"'.format(edge.weight))
-    r.append("{0} -> {1} [{2}];".format(edge.source.name, transition2name(edge.dest), ",".join(a)))
-    
-@metamodel.TransformationRule
-def outedge2graphviz(edge, r):
-    a=[]
-    if edge.weight!=None and edge.weight!=1:
-        a.append('label="{0}"'.format(edge.weight))
-    r.append("{0} -> {1} [{2}];".format(transition2name(edge.source), edge.dest.name, ",".join(a)))
+    r.append("{0} -> {1} [{2}];".format(element2graphviz(edge.source), element2graphviz(edge.dest), ",".join(a)))
     
 
 print(petrinet2graphviz(netin.root()))

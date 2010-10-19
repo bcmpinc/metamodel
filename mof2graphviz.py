@@ -51,7 +51,7 @@ def metamodel2graphviz(metamodel):
 @metamodel.TransformationRule
 def element2graphviz(element, r):
     if element.extends!=None:
-        r.append('{0} -> {1} [arrowhead=onormal];'.format(element.name, element.extends.name))
+        r.append('{0}:T -> {1}:T [arrowhead=onormal];'.format(element.name, element.extends.name))
     if len(element.attributes) > 0:
         attrlist = '<TR><TD ALIGN="LEFT" BALIGN="LEFT"><FONT POINT-SIZE="10">{0}</FONT></TD></TR>'.format(r"<BR/>".join([a.name for a in element.attributes]))
     else:
