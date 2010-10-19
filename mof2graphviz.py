@@ -56,7 +56,11 @@ def element2graphviz(element, r):
         attrlist = '<TR><TD ALIGN="LEFT" BALIGN="LEFT"><FONT POINT-SIZE="10">{0}</FONT></TD></TR>'.format(r"<BR/>".join([a.name for a in element.attributes]))
     else:
         attrlist = ""
-    label = '<<TABLE PORT="T" BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD>{0}</TD></TR>{1}</TABLE>>'.format(element.name, attrlist)
+    if element.abstract:
+        name = '<FONT FACE="italic">{0}</FONT>'.format(element.name)
+    else:
+        name = element.name
+    label = '<<TABLE PORT="T" BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD>{0}</TD></TR>{1}</TABLE>>'.format(name, attrlist)
     r.append('{0} [shape=none, label={1}];'.format(element.name, label))
     r.append("")
 
