@@ -162,7 +162,7 @@ Known bugs
 
 Copyright
 ---------
-Copyright &copy; 2010 Bauke Conijn <bcmpinc (at) sourceforge.net>
+Copyright &copy; 2010 Bauke Conijn <bcmpinc (at) users.sourceforge.net>
 License GPLv3+: [GNU GPL version 3 or (at your option) any later version.](http://gnu.org/licenses/gpl.html)
 
 This  is  free  software:  you  are free to change and redistribute it.
