@@ -61,7 +61,7 @@ def activity2graphviz(activity,r):
     r.append('{0} [shape=none, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0">'.format(tag))
     if activity.init:
         r.append('<TR><TD></TD><TD BORDER="1">init</TD><TD></TD></TR>')
-    lowerbound = activity.existence if activity.existence!=None else 0
+    lowerbound = activity.existence if activity.existence!=None and activity.existence>0 else 0
     upperbound = activity.absence-1 if activity.absence!=None else "*"
     if lowerbound==upperbound:
         r.append('<TR><TD></TD><TD BORDER="1">{0}</TD><TD></TD></TR>'.format(lowerbound))

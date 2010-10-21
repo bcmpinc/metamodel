@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 #
-# Converts petrinets to graphviz graphs.
+# Converts metamodels to graphviz graphs.
 # Copyright (C) 2010  Bauke Conijn
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -35,7 +35,7 @@ def metamodel2graphviz(metamodel):
     global attributecount, associationcount
     attributecount=0
     associationcount=0
-    r = ["digraph {", "overlap=false;", "splines=true;", "edge[fontsize=8, len=.5];", "model=mds;"]
+    r = ["digraph {", "overlap=false;", "splines=true;", "edge[fontsize=8, len=1];", "model=mds;"]
     r.append("// Elements:")
     for element in metamodel.elements:
         element2graphviz(element, r)
@@ -70,13 +70,16 @@ def association2graphviz(a, r):
     associationcount += 1
     dummy="_assoc_{0}".format(associationcount)
     r.append(r'{0} [shape=point, label="", width=0, height=0]'.format(dummy))
-    r.append(r'{0}:T -> {1} [arrowtail=vee, dir=back, label="{2}\n{3}"];'.format(
+    r.append(r'{0}:T -> {1} [arrowtail=vee, dir=back, label="{2}\n{3}", len=.3];'.format(
         a.parent.name, dummy, 
         a.parentname, "0..1" if a.optional else "1",
     ))
-    r.append(r'{0} -> {1}:T [dir=none, label="{2}\n{3}"];'.format(
+    r.append(r'{0} -> {1}:T [dir=none, label="{2}\n{3}", len=.3];'.format(
         dummy, a.child.name, 
         a.childname, "0..{0}".format(a.limit) if a.limit!=None else "*", 
+    ))
+    r.append(r'{0}:T -> {1}:T [color=none, len=1.4];'.format(
+        a.parent.name, a.child.name,
     ))
 
 print(metamodel2graphviz(netin.root()))
