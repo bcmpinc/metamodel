@@ -29,7 +29,7 @@ class IntegrationTests(unittest.TestCase):
         modeldesc = str(net).split("\n")
         self.assertTrue("  Element Place" in modeldesc)
         self.assertTrue("    <attribute> name" in modeldesc)
-        self.assertTrue("    FromTransition[] fromtransitions" in modeldesc)
+        self.assertTrue("    OutputArc[] fromtransitions" in modeldesc)
         
         netin = net.instance().load("petrinet.m1")
         repr(netin)

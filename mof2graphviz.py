@@ -35,7 +35,7 @@ def metamodel2graphviz(metamodel):
     global attributecount, associationcount
     attributecount=0
     associationcount=0
-    r = ["digraph {", "overlap=false;", "splines=true;", "edge[fontsize=8];"]
+    r = ["digraph {", "overlap=false;", "splines=true;", "edge[fontsize=8, len=.5];", "model=mds;"]
     r.append("// Elements:")
     for element in metamodel.elements:
         element2graphviz(element, r)

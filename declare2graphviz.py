@@ -38,7 +38,7 @@ def declare2graphviz(declare):
     activitycount=0
     relationcount=0
     negatecount=0
-    r = ["digraph {", "overlap=false;", "splines=true;", "model=mds"]
+    r = ["digraph {", "overlap=false;", "splines=true;", "model=mds;"]
     r.append("// Activities:")
     for activity in declare.activities:
         activity2graphviz(activity, r)
