@@ -35,7 +35,7 @@ def metamodel2graphviz(metamodel):
     global attributecount, associationcount
     attributecount=0
     associationcount=0
-    r = ["digraph {", "overlap=false;", "splines=true;", "edge[fontsize=8, len=1];", "model=mds;"]
+    r = ["digraph {", "overlap=false;", "splines=true;", "edge[fontsize=12, len=1];", "model=mds;"]
     r.append("// Elements:")
     for element in metamodel.elements:
         element2graphviz(element, r)
@@ -53,7 +53,7 @@ def element2graphviz(element, r):
     if element.extends!=None:
         r.append('{1}:T -> {0}:T [arrowtail=onormal, dir=back, len=.5];'.format(element.name, element.extends.name))
     if len(element.attributes) > 0:
-        attrlist = '<TR><TD ALIGN="LEFT" BALIGN="LEFT"><FONT POINT-SIZE="10">{0}</FONT></TD></TR>'.format(r"<BR/>".join([a.name for a in element.attributes]))
+        attrlist = '<TR><TD ALIGN="LEFT" BALIGN="LEFT"><FONT POINT-SIZE="12">{0}</FONT></TD></TR>'.format(r"<BR/>".join([a.name for a in element.attributes]))
     else:
         attrlist = ""
     if element.abstract:

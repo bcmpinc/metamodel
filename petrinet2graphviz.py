@@ -36,7 +36,7 @@ M=type("PetrinetsModel", (), net.elements)
 def petrinet2graphviz(petrinet):
     global elementcount
     elementcount=0
-    r = ["digraph {", "overlap=false"]
+    r = ["digraph {", "overlap=false", "model=mds"]
     r.append("// Places:")
     for place in petrinet.places:
         element2graphviz(place, r, "circle")
@@ -58,15 +58,15 @@ def element2graphviz(element,r,shape):
     a = ["shape={0}".format(shape)]
     
     tag = "place_{0}".format(elementcount)
+    nametag = "cluster_p{0}".format(elementcount)
     elementcount += 1
     if element.name!=None and element.name!="":
-        nametag = tag + "_name"
-        r.append('{0} [label="{1}", shape=none];'.format(nametag, element.name))
-        r.append('{0} -> {1} [color=none, len=0.4];'.format(nametag, tag))
+        r.append('subgraph {0} {{ label="{1}"; color=none; fontsize=12;'.format(nametag, element.name))
     if isinstance(element, M.InterfacePlace) or isinstance(element, M.InterfaceTransition):
         a.append('penwidth=3')
     
     a.append('fixedsize=true')
+    a.append('color=black')
     if hasattr(element, "tokens"):
         if element.tokens<6:
             a.append('label="{0}"'.format(["","·",":","∴","∷","⁙"][element.tokens]))
@@ -77,11 +77,13 @@ def element2graphviz(element,r,shape):
         a.append('label=""')
         
     r.append('{0} [{1}];'.format(tag, ",".join(a)))
+    if element.name!=None and element.name!="":
+        r.append('}')
     return tag
 
 @metamodel.TransformationRule
 def edge2graphviz(edge, r):
-    a=[]
+    a=["len=1"]
     if edge.weight!=None and edge.weight!=1:
         a.append('label="{0}"'.format(edge.weight))
     r.append("{0} -> {1} [{2}];".format(element2graphviz(edge.source), element2graphviz(edge.dest), ",".join(a)))

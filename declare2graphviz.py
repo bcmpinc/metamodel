@@ -40,6 +40,8 @@ def declare2graphviz(declare):
     negatecount=0
     r = ["digraph {", "overlap=false;", "splines=true;", "model=mds;"]
     r.append("// Activities:")
+    for activity in declare.init:
+        activity2graphviz(activity, r)
     for activity in declare.activities:
         activity2graphviz(activity, r)
     r.append("// Binary Relations:")
@@ -59,14 +61,15 @@ def activity2graphviz(activity,r):
     tag = "A{0}".format(activitycount)
     activitycount += 1
     r.append('{0} [shape=none, label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0">'.format(tag))
-    if activity.init:
+    if isinstance(activity, M.InitialActivity):
         r.append('<TR><TD></TD><TD BORDER="1">init</TD><TD></TD></TR>')
-    lowerbound = activity.existence if activity.existence!=None and activity.existence>0 else 0
-    upperbound = activity.absence-1 if activity.absence!=None else "*"
-    if lowerbound==upperbound:
-        r.append('<TR><TD></TD><TD BORDER="1">{0}</TD><TD></TD></TR>'.format(lowerbound))
-    elif lowerbound!=0 or upperbound!="*":
-        r.append('<TR><TD></TD><TD BORDER="1">{0}..{1}</TD><TD></TD></TR>'.format(lowerbound, upperbound))
+    else:
+        lowerbound = activity.existence if activity.existence!=None and activity.existence>0 else 0
+        upperbound = activity.absence-1 if activity.absence!=None else "*"
+        if lowerbound==upperbound:
+            r.append('<TR><TD></TD><TD BORDER="1">{0}</TD><TD></TD></TR>'.format(lowerbound))
+        elif lowerbound!=0 or upperbound!="*":
+            r.append('<TR><TD></TD><TD BORDER="1">{0}..{1}</TD><TD></TD></TR>'.format(lowerbound, upperbound))
     r.append('<TR><TD BORDER="1" COLSPAN="3" CELLPADDING="10" PORT="T">{0}</TD></TR>'.format(activity.name))
     r.append('</TABLE>>];') 
     return tag
