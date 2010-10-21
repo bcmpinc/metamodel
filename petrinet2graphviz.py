@@ -30,11 +30,13 @@ import metamodel
 net = metamodel.load("petrinets.m2")
 netin = net.instance().load(sys.argv[1])
 
+M=type("PetrinetsModel", (), net.elements)
+
 @metamodel.TransformationRule
 def petrinet2graphviz(petrinet):
     global elementcount
     elementcount=0
-    r = ["digraph {"]
+    r = ["digraph {", "overlap=false"]
     r.append("// Places:")
     for place in petrinet.places:
         element2graphviz(place, r, "circle")
@@ -55,14 +57,15 @@ def element2graphviz(element,r,shape):
     global elementcount
     a = ["shape={0}".format(shape)]
     
-    tag = "_place_{0}".format(elementcount)
+    tag = "place_{0}".format(elementcount)
     elementcount += 1
-    if hasattr(element, "name"):
-        nametag = tag
-        tag = 'P_{0}'.format(element.name)
+    if element.name!=None and element.name!="":
+        nametag = tag + "_name"
         r.append('{0} [label="{1}", shape=none];'.format(nametag, element.name))
         r.append('{0} -> {1} [color=none, len=0.4];'.format(nametag, tag))
-        
+    if isinstance(element, M.InterfacePlace) or isinstance(element, M.InterfaceTransition):
+        a.append('penwidth=3')
+    
     a.append('fixedsize=true')
     if hasattr(element, "tokens"):
         if element.tokens<6:

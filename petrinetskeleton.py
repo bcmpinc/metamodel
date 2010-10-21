@@ -53,9 +53,9 @@ def copy_non_interface(element):
             copy_edge.later(edge)
         for edge in element.fromtransitions:
             copy_edge.later(edge)
-        return M.Place(of=petrinet(element.of), capacity=element.capacity, tokens=element.tokens)
+        return M.Place(of=petrinet(element.of), capacity=element.capacity, tokens=element.tokens, name=element.name)
     elif element.__class__ == M.Transition:
-        return M.Transition(of=petrinet(element.of))
+        return M.Transition(of=petrinet(element.of), name=element.name)
     else:
         return None
 
