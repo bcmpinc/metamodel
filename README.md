@@ -105,19 +105,19 @@ The syntax as railroad diagrams:
 (Created with an online [railroad generator](http://www-cgi.uni-regensburg.de/~brf09510/syntax.html).)
 
 ### Model
-![(model railroad diagram)](/bcmpinc/metamodel/raw/master/images/syntax_model.png)
+![(model railroad diagram)](https://raw.githubusercontent.com/bcmpinc/metamodel/raw/master/images/syntax_model.png)
 
 ### Element
-![(element railroad diagram)](/bcmpinc/metamodel/raw/master/images/syntax_element.png)
+![(element railroad diagram)](https://raw.githubusercontent.com/bcmpinc/metamodel/raw/master/images/syntax_element.png)
 
 ### FieldList
-![(fieldlist railroad diagram)](/bcmpinc/metamodel/raw/master/images/syntax_fieldlist.png)
+![(fieldlist railroad diagram)](https://raw.githubusercontent.com/bcmpinc/metamodel/raw/master/images/syntax_fieldlist.png)
 
 ### Field
-![(field railroad diagram)](/bcmpinc/metamodel/raw/master/images/syntax_field.png)
+![(field railroad diagram)](https://raw.githubusercontent.com/bcmpinc/metamodel/raw/master/images/syntax_field.png)
 
 ### Value
-![(value railroad diagram)](/bcmpinc/metamodel/raw/master/images/syntax_value.png)
+![(value railroad diagram)](https://raw.githubusercontent.com/bcmpinc/metamodel/raw/master/images/syntax_value.png)
 
 
 API
